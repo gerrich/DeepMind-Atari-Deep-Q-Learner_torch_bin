@@ -41,21 +41,36 @@ Where `options` has the following keys:
 function game:__init(gamename, options, roms_path)
     options = options or {}
 
+		print("@@game:__init", gamename, options, roms_path)
     self.useRGB   = options.useRGB
     self.useRAM   = options.useRAM
+		
+		require 'pl.pretty'.dump(options)
+		self.ale_host = options.ale_host
+		self.ale_port = options.ale_port
+		print("@@ale_host: ", self.ale_host)
+		print("@@ale_port: ", self.ale_port)
+		
 
     self.name = gamename
     local path_to_game = paths.concat(roms_path, gamename) .. '.bin'
-    local msg, err = pcall(alewrap.createEnv, path_to_game,
-                           {enableRamObs = self.useRAM})
+		local msg
+		local err
+		if self.ale_host == "" then
+				msg, err = pcall(alewrap.createEnv, path_to_game, {enableRamObs = self.useRAM})
+		else
+				--msg, err = pcall(alewrap.createRemote, self.ale_host, self.ale_port, path_to_game, {enableRamObs = self.useRAM})
+				err = alewrap.createRemote(self.ale_host, self.ale_port, path_to_game, {enableRamObs = self.useRAM})
+				msg = 1
+		end
     if not msg then
-        error("Cannot find rom " .. path_to_game)
+        error("Cannot find rom " .. path_to_game .. "\nERROR:" .. err)
     end
     self.env = err
     self.observations = self.env:envStart()
     self.action = {torch.Tensor{0}}
 
-    self.game_over = function() return self.env.ale:isGameOver() end
+    self.game_over = function() return self.env:isGameOver() end
 
     -- setup initial observations by playing a no-action command
     self:saveState()
@@ -71,6 +86,7 @@ end
 
 
 function game:shape()
+		print("@@game:shape()", self.observations[1]:size():totable())
     return self.observations[1]:size():totable()
 end
 
@@ -113,13 +129,14 @@ following keys:
  * `terminal` - (bool), true if the new state is a terminal state
 ]]
 function game:play(action)
+		print("GAME:PLAY(", action, ")")
     action = action or 0
     self.action[1][1] = action
 
     -- take the step in the environment
     local reward, observations = self.env:envStep(self.action)
     local is_game_over = self.game_over(reward)
-
+		print("reward:", reward, " is_game_over:", is_game_over)
     local pixels = observations[1]
     local ram = observations[2]
     local data = pixels

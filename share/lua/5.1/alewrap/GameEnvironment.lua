@@ -29,6 +29,8 @@ function gameEnv:__init(_opt)
     self._actrep        = _opt.actrep or 1
     self._random_starts = _opt.random_starts or 1
     self._screen        = alewrap.GameScreen(_opt.pool_frms, _opt.gpu)
+    self.ale_host = _opt.ale_host
+    self.ale_port = _opt.ale_port
     self:reset(_opt.env, _opt.env_params, _opt.gpu)
     return self
 end
@@ -56,6 +58,8 @@ end
 function gameEnv:reset(_env, _params, _gpu)
     local env
     local params = _params or {useRGB=true}
+    params.ale_host = self.ale_host
+    params.ale_port = self.ale_port
     -- if no game name given use previous name if available
     if self.game then
         env = self.game.name
