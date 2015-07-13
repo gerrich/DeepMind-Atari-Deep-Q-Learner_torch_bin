@@ -102,13 +102,14 @@ function hex_to_byte_tensor_2d(str, w, h)
 	t = torch.ByteTensor(h, w)
 	s = t:storage()
 	i = 1
-	for cc in str:gmatch".." do
+	for j = 1,str:len(),2 do
     -- do something with c
-		s[i] = tonumber(cc, 16)
+		s[i] = tonumber(string.sub(str, j, j+1), 16)
 		i = i + 1
 	end
 	return t
 end
+
 function hex_to_byte_tensor_1d(str, l)
 	t = torch.ByteTensor(l)
 	i = 1
@@ -133,12 +134,12 @@ function Env:receiveMain()
 	screen_obs = hex_to_byte_tensor_2d(screen_string, self.width, self.height)
 	episode_string = string.sub(data, 256 + 1 + screen_sz + 1)
 
-	print("EPISODE: ", episode_string)	
+	--print("EPISODE: ", episode_string)	
 	terminal, reward = string.match(episode_string, "(%d+),(%d+)")
-	print(ram_obs:size())
-	print(screen_obs:size())
+	--print(ram_obs:size())
+	--print(screen_obs:size())
 	chunk = { ram_obs, screen_obs, tonumber(terminal), tonumber(reward) }
-	print(chunk[3],chunk[4])
+	--print(chunk[3],chunk[4])
 	return chunk	
 end
 
@@ -148,7 +149,7 @@ end
 
 function Env:play(action)
 	msg = tostring(action) .. ",18\n"
-	print("SEND: " .. msg) 
+	--print("SEND: " .. msg) 
 	self.client:send(msg)
 	self.last_chunk = self:receiveMain()		
 end
@@ -174,7 +175,7 @@ function Env:envStep(actions)
     assert(#actions == 1, "one action is expected")
     assert(actions[1]:nElement() == 1, "one discrete action is expected")
 
-		print(" Env:envStep(", actions, ")", self.last_chunk[3], self.last_chunk[4])
+		--print(" Env:envStep(", actions, ")", self.last_chunk[3], self.last_chunk[4])
     if self:isGameOver() then
         --self.ale:resetGame()
 				self:play(45)
