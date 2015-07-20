@@ -42,7 +42,6 @@ end
 require 'torch'
 local Env = torch.class('alewrap.AleRemoteEnv')
 function Env:__init(host, port, romName, extraConfig)
-		print("CLIENT 0")
     self.config = {
         -- An additional reward signal can be provided
         -- after the end of one game.
@@ -61,16 +60,11 @@ function Env:__init(host, port, romName, extraConfig)
 		self.ale_conn = i
 		local socket = require("socket")
 		self.client = socket.tcp();
-		print("CLIENT 1")
 		self.client:settimeout(1)
-		print("CLIENT 2")
 		self.client:connect(host, port);
-		print("CLIENT 3")
 		msg = self.client:receive('*l')
 		self.width = tonumber(string.sub(msg,1,3))
 		self.height = tonumber(string.sub(msg,5,7))
-		
-print("MSG: " , msg, self.width, self.height)
 		
 		self.client:send('1,1,1,1\n')
 		self.last_chunk = self:receiveMain()		
@@ -116,7 +110,7 @@ function hex_to_byte_tensor_1d(str, l)
 	for cc in str:gmatch".." do
     -- do something with c
 		t[i] = tonumber(cc, 16)
-		i = 1 + 1
+		i = i + 1
 	end
 	return t
 end
@@ -128,10 +122,14 @@ function Env:receiveMain()
 	ram_string = string.sub(data, 1, 256)
 	--print("RAM:", ram_string)
 	ram_obs = hex_to_byte_tensor_1d(ram_string, 128)
+	
 	screen_sz =  self.width * self.height * 2
 	screen_string = string.sub(data, 258, 257 + screen_sz)
 	--print("SCREEN:", screen_string)
+
 	screen_obs = hex_to_byte_tensor_2d(screen_string, self.width, self.height)
+	print("SZ: ", screen_obs:size())
+
 	episode_string = string.sub(data, 256 + 1 + screen_sz + 1)
 
 	--print("EPISODE: ", episode_string)	
